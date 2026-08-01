@@ -1,66 +1,55 @@
-"""Orchestration entry point for the wealth management system.
+"""orchestration entry point — run the full planning pipeline.
 
-Kept intentionally thin — imports the public API from the domain
-modules and prints a readable summary. All business logic lives in the
-engine modules (``risk_engine``, ``assets``, ``recommendation_engine``),
-and all sample data lives in ``tests``.
+this is the public face of the system. it takes a user, runs the
+planner (cashflow -> health -> goals -> risk -> portfolio ->
+probability -> explained actions) and prints the result in plain
+language. all heavy lifting lives in the engines; this file only
+wires them together and prints.
 """
 
-import pandas as pd
-
-from wealth_management_system.recommendation_engine import (
-    best_instruments_for_need,
-)
-from wealth_management_system.risk_engine import assess_risk
-from wealth_management_system.sample_users import ravi
+from wealth_management_system.planner import build_plan
+from wealth_management_system.sample_users import build_all_sample_users
 from wealth_management_system.utils import ensure_utf8_console
 
-pd.set_option("display.max_columns", None)
-pd.set_option("display.width", 120)
-pd.set_option("display.max_colwidth", 30)
 
+def _print_plan(user) -> None:
+    """print one user's full explained plan."""
+    plan = build_plan(user)
 
-def _print_risk(profile) -> None:
-    """Assess and print the risk summary for a user."""
-    risk = assess_risk(profile)
-    print(f"=== Risk Assessment: {profile.name} ===")
-    print(f"Capacity Score:  {risk.capacity_score:.2f} / 1.0")
-    print(f"Tolerance Score: {risk.tolerance_score:.2f} / 1.0")
-    print(f"Final Score:     {risk.final_score_100} / 100")
-    print(f"Risk Category:   {risk.risk_category}")
-    print(f"Capacity binding: {risk.capacity_was_binding}")
+    print("=" * 72)
+    print(f"FINANCIAL PLAN — {plan.user_name}")
+    print("=" * 72)
+    print(plan.summary)
+    print()
 
+    print(f"Health: {plan.health.grade} ({plan.health.score}/100)")
+    print(f"Risk capacity: {plan.risk.risk_category} ({plan.risk.final_score_100}/100)")
 
-def _print_recommendations(profile) -> None:
-    """Print the top investment recommendations for a user."""
-    tax_bracket = profile.financial.tax_bracket_percent / 100
-    columns = [
-        "instrument",
-        "category",
-        "gross_return",
-        "effective_return",
-        "projected_1L",
-        "risk_level",
-        "lock_in_yrs",
-        "deduction",
-    ]
-    recommendations = best_instruments_for_need(
-        need="growth",
-        tax_bracket=tax_bracket,
-        has_80c_headroom=True,
-        has_nps_headroom=True,
-        years=7,
-        monthly_investment=10000,
-    )
-    print(f"\n=== Recommendations: {profile.name} ===")
-    print(recommendations[columns].to_string(index=False))
+    print("\nPortfolio allocation (strategic target):")
+    for s in plan.portfolio.slices:
+        names = ", ".join(i.value.replace("_", " ") for i in s.instruments)
+        print(f"  {s.bucket:<8} {s.weight:>5.1%}  →  {names}")
+
+    print("\nRecommended actions:")
+    for a in plan.actions:
+        print(f"  [{a.priority:<4}] {a.action}")
+        print(f"        ↳ {a.reason}")
+
+    print("\nGoal outlook:")
+    for p in plan.probabilities:
+        print(
+            f"  {p.goal_type.replace('_', ' '):<20} "
+            f"{p.probability:>5.0%}  median ₹{p.median_outcome:>12,.0f} "
+            f"({p.verdict})"
+        )
+    print()
 
 
 def main() -> None:
-    """Run the end-to-end demo: risk assessment + recommendations."""
+    """run the planning pipeline for every sample user."""
     ensure_utf8_console()
-    _print_risk(ravi)
-    _print_recommendations(ravi)
+    for user in build_all_sample_users():
+        _print_plan(user)
 
 
 if __name__ == "__main__":

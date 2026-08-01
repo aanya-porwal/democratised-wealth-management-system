@@ -216,7 +216,23 @@ def best_instruments_for_need(
             }
         )
 
-    df = pd.DataFrame(results)
+    df = pd.DataFrame(results, columns=[
+        "instrument",
+        "category",
+        "gross_return",
+        "effective_return",
+        "projected_1L",
+        "risk_level",
+        "lock_in_yrs",
+        "tax_treatment",
+        "deduction",
+        "liquidity",
+    ])
+    if df.empty:
+        # no compatible instruments — return the typed empty frame rather
+        # than crashing downstream on a column-less DataFrame
+        return df
+
     df = df.sort_values("effective_return", ascending=False).head(top_n)
     df["gross_return"] = df["gross_return"].map("{:.2%}".format)
     df["effective_return"] = df["effective_return"].map("{:.2%}".format)

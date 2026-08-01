@@ -1,178 +1,223 @@
-# Democratised Wealth Management System
+# Wealth Management System
 
-An AI-powered wealth management prototype that combines **risk assessment**,
-**tax-aware asset allocation** and **investment recommendations** for the
-Indian market. Built for users across the economic spectrum — from tier-2/3
-first-time investors to sophisticated high-earners.
+A goal-based, AI-assisted financial planning platform for India.
 
-This project is a clean, modular refactor of the original Jupyter prototype
-(`notebooks/prototype.ipynb`), preserving all business logic and outputs while
-removing duplication and enforcing PEP 8 + type hints.
+This is not a "pick mutual funds" tool. It reasons like a financial
+planner: it understands your cashflow and financial health before it
+ever suggests an investment. It prioritises your goals, checks whether
+they are realistic, measures how much risk you can actually take, builds
+a strategic portfolio, and — most importantly — explains every
+recommendation in plain language.
 
----
-
-## Features
-
-| Module | Responsibility |
-|--------|----------------|
-| `models.py` | Pure data models — enums, dataclasses, user/goal/risk/asset definitions. No calculations. |
-| `risk_engine.py` | Risk capacity (income stability, emergency fund, debt, surplus, dependents) & risk tolerance (behavioural), combined into a final `RiskAssessment` where **capacity acts as a ceiling**. |
-| `assets.py` | The curated `ASSET_PROFILES` database — 44+ Indian investment instruments with returns, volatility, liquidity, lock-in, tax treatment and 80C eligibility. |
-| `recommendation_engine.py` | Tax-optimised instrument selection: within-category alternatives and cross-category `best_instruments_for_need`. |
-| `utils.py` | Shared helpers: INR formatting and an IRR-based `elss_irr` for correctly modelling the ELSS 80C entry benefit. |
-| `tests.py` | Demo users (`ravi`, `meena`) and runnable sanity checks for every public API. |
-| `main.py` | Thin orchestration entry point (risk + recommendations for a demo user). |
+Built for users across the economic spectrum: students, young
+professionals, families, business owners, retirees, low income, high
+income, high debt, and high net worth.
 
 ---
 
-## Quick Start
+## The philosophy
+
+- cashflow always comes before investing
+- emergency fund always comes before wealth creation
+- goal priority always comes before return optimisation
+- risk capacity always overrides risk tolerance
+- liquidity is never ignored
+- tax is never an afterthought
+- a recommendation that cannot be explained should not exist
+
+The system is built around **engines**, each solving one real problem,
+orchestrated by a **planner** that runs the full planning flow.
+
+---
+
+## Architecture
+
+```
+wealth_management_system/
+├── models.py                 # data models: enums + dataclasses (no logic)
+├── sample_users.py           # ravi, meena + 5 life-stage archetypes
+├── utils.py                  # formatting + IRR helpers
+├── risk_engine.py            # risk capacity + tolerance → RiskAssessment
+├── cashflow_engine.py        # surplus, savings rate, emergency fund
+├── health_engine.py          # financial health score + explainable signals
+├── goal_engine.py            # goal feasibility, priority, surplus allocation
+├── probability_engine.py     # monte carlo goal success probability
+├── portfolio_engine.py       # risk score → strategic allocation + instruments
+├── recommendation_engine.py  # tax-aware instrument selection
+├── planner.py                # orchestrates all engines → FinancialPlan
+├── main.py                   # entry point: runs the pipeline, prints plans
+├── demo.py                   # full walkthrough of every public API
+└── tests/                    # pytest suite (44 tests across all engines)
+```
+
+### The planning flow
+
+The planner runs these steps in exactly this order — the way a certified
+planner would:
+
+1. **cashflow** — how much money exists each month after expenses
+2. **health** — how solid the foundations are (savings rate, emergency
+   fund, debt, surplus, protection)
+3. **goals** — what the money is for, and whether each goal is realistic
+4. **risk** — how much risk the user can *actually* take (capacity is a
+   ceiling)
+5. **portfolio** — the strategic allocation and concrete instruments
+6. **probability** — monte carlo success probability for each goal
+7. **actions** — explained recommendations, ordered by priority
+
+The system never skips straight to recommending investments.
+
+---
+
+## Quick start
 
 ```bash
-# 1. (Recommended) create & activate a virtual environment
+# 1. (recommended) create & activate a virtual environment
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 
 # 2. install dependencies
 pip install -r requirements.txt
 
-# 3. run the end-to-end demo
-python main.py
+# 3. run the full planning pipeline for every sample user
+python -m wealth_management_system.main
 
-# 4. run all sanity checks / demo users
-python tests.py
+# 4. walk every public API (risk, assets, recommendations, diagnostics)
+python -m wealth_management_system.demo
+
+# 5. run the test suite
+python -m pytest wealth_management_system/tests -q
 ```
 
-### Sample output (`python main.py`)
+### Sample output (`python -m wealth_management_system.main`)
 
 ```
-=== Risk Assessment: Ravi Shankar ===
-Capacity Score:  0.63 / 1.0
-Tolerance Score: 0.76 / 1.0
-Final Score:     63 / 100
-Risk Category:   Aggressive
-Capacity binding: True
+=====================================================================
+FINANCIAL PLAN — Ravi Shankar
+=====================================================================
+Ravi Shankar's foundations are good (health 69/100). Risk capacity: aggressive (69/100). Goal outlook: 2 goal(s) unlikely on the current path.
 
-=== Recommendations: Ravi Shankar ===
-         instrument      category gross_return effective_return projected_1L  risk_level  lock_in_yrs deduction
-...
-```
+Health: good (69/100)
+Risk capacity: Aggressive (69/100)
 
----
+Portfolio allocation (strategic target):
+  equity   65.0%  →  equity elss, equity small cap, equity mid cap
+  debt     28.0%  →  balanced advantage, nps tier2, epf
+  gold      3.5%  →  sovereign gold bond, gold etf
+  cash      3.5%  →  savings account, liquid fund
 
-## How it works
+Recommended actions:
+  [now ] top up the emergency fund to 6 months (₹247,500 more)
+        ↳ the buffer is partial; finish it before heavy long-term investing
+  [next] revisit the wealth creation goal — increase the monthly contribution or extend the date
+        ↳ only a 0% chance of success on the current path (median shortfall ₹10,000,000)
 
-### 1. Risk Assessment (`risk_engine.py`)
-
-- **Capacity** — a weighted blend of:
-  - Emergency fund readiness (30%)
-  - Income stability (25%)
-  - Debt burden (20%)
-  - Investable surplus ratio (15%)
-  - Dependents (10%)
-- **Tolerance** — from the user's stated risk tolerance, drawdown reaction,
-  experience, financial literacy and loss aversion.
-- **Final score** = `min(0.45*tolerance + 0.55*capacity, capacity)`.
-  Capacity is a hard ceiling — a user can never take more risk than they can
-  absorb.
-
-### 2. Asset Universe (`assets.py`)
-
-Every instrument is described by an `AssetClassProfile`: expected return,
-volatility, horizon, liquidity, lock-in, risk level (1–10), tax treatment
-(`EEE` / `EET` / equity LTCG / debt slab / SGB / ...), 80C deduction benefit,
-minimum investment and SIP eligibility.
-
-### 3. Recommendations (`recommendation_engine.py`)
-
-- `get_tax_optimised_alternatives(...)` — ranks every instrument *within a
-  category* by after-tax return for the user's bracket.
-- `best_instruments_for_need(...)` — the core function. Maps a generic need
-  (`"safe"`, `"debt"`, `"growth"`, `"gold"`, `"real_assets"`, `"all"`) to the
-  top instruments *across all categories*, filtered by horizon, monthly
-  investment, risk ceiling and then ranked by effective (after-tax) return.
-
-### 4. ELSS special-case (`utils.py`)
-
-ELSS gets a one-time 80C entry benefit. A naive rate adjustment overstates
-this, so the engine builds the actual monthly cash flows (SIP outflows, annual
-tax refunds, terminal redemption net of LTCG) and solves for the **IRR** to
-derive the true effective after-tax return.
-
----
-
-## Project Structure
-
-```
-democratised-wealth-management-system/
-├── README.md
-├── requirements.txt
-├── main.py                  # orchestration only
-├── models.py                # enums + dataclasses (no calculations)
-├── risk_engine.py           # risk scoring & assessment
-├── assets.py                # investment product database
-├── recommendation_engine.py # tax-aware recommendations
-├── utils.py                 # shared helpers (formatting, IRR)
-├── tests.py                 # demo users + sanity checks
-└── notebooks/
-    └── prototype.ipynb      # original notebook (archival)
+Goal outlook:
+  emergency fund          0%  median ₹      44,359 (unlikely)
+  wealth creation         0%  median ₹           0 (unlikely)
 ```
 
 ---
 
-## Refactor summary
+## Engines in detail
 
-### Cell → file mapping
+### risk_engine
 
-| Notebook cell(s) | Moved to |
-|------------------|----------|
-| 0, 6, 7, 8 | `models.py` |
-| 1, 2, 3, 4 | **duplicates of cell 0 — removed** |
-| 9 | `tests.py` (`ravi` + sanity prints) |
-| 10 | (imports only — removed, merged into modules) |
-| 11, 12, 13, 14 | `risk_engine.py` |
-| 15 | `tests.py` (`ravi` risk print) |
-| 16 | `tests.py` (`meena` + risk print) |
-| 17 | (section comment — dropped) |
-| 18 | `models.py` (asset enums) + `assets.py` imports |
-| 19 | `assets.py` + `models.py` (AssetClassProfile dataclass) |
-| 20 | `assets.py` (`ASSET_PROFILES`) |
-| 21 | `tests.py` (asset universe verification) |
-| 22 | `recommendation_engine.py` |
-| 23 | `recommendation_engine.py` |
-| 24 | `tests.py` (recommendation demos) |
-| 25 | `tests.py` (diagnostics) |
-| 26 | malformed cell — ignored |
+- **capacity** — weighted blend of emergency fund readiness (30%),
+  income stability (25%), debt burden (20%), investable surplus (15%),
+  dependents (10%).
+- **tolerance** — behavioural: stated tolerance, drawdown reaction,
+  experience, financial literacy, loss aversion.
+- **final score** = `min(0.45 * tolerance + 0.55 * capacity, capacity)`.
+  Capacity is a hard ceiling — you can never take more risk than you can
+  financially absorb.
 
-### Duplicated code removed
+### cashflow_engine
 
-- `EmploymentType`, `GoalType`, `GoalPriority`, `Goal` were defined twice
-  (cell 0 and again in cells 1–4) → kept once in `models.py`.
-- `import numpy as np` / `from dataclasses import ...` / `from enum import
-  Enum` repeated in cells 10 and 18 → consolidated into per-module imports.
-- `pd.set_option(...)` display options repeated → applied once in `tests.py`
-  and `main.py`.
+Computes true monthly surplus, savings rate, and emergency fund
+readiness. The emergency fund is the foundation — irregular earners get
+a thicker recommended buffer (9 months vs 6).
 
-### Assumptions made
+### health_engine
 
-1. `models.ipynb` is an empty/broken stub (single malformed cell) → ignored.
-2. `elss_irr` was **referenced but never defined** in the notebook. Implemented
-   a correct IRR-based version in `utils.py` to make the ELSS code path run.
-3. `numpy.irr`/`numpy.npv` are deprecated/removed in numpy 2.x, so `utils.py`
-   implements its own bisection IRR (no extra dependency).
-4. `has_nps_headroom` is accepted for API compatibility but does not currently
-   change any ranking (as in the original notebook).
-5. Tax brackets/rates and SGB interest are kept at the notebook's values; the
-   comment about "update as per 2026" is left as a TODO in `FinancialProfile`.
+Scores 0–100 across five foundations and returns plain-language signals
+explaining the score. The emergency fund **caps the grade**: a user with
+no buffer can never score "excellent". Foundations always come first.
 
-### TODOs / known limitations
+### goal_engine
 
-- **2026 tax-slab update**: `FinancialProfile.tax_bracket_percent` docstring
-  notes the brackets may need updating for FY 2026-27 (surcharges etc.).
-- **Onboarding questionnaire** referenced in `BehavioralProfile` does not yet
-  exist — scores are currently supplied directly.
-- `elss_irr` uses a deterministic bisection fallback when no exact root exists;
-  behaviour is stable but slightly approximate for pathological inputs.
-- No tests yet for the risk/asset modules beyond the `tests.py` demo runs.
+For every goal: projected value on the current savings path, required
+monthly contribution to hit the target, and feasibility. Then allocates
+surplus to goals in strict priority order (critical → high →
+aspirational), after holding back the emergency fund share.
+
+### probability_engine
+
+Monte Carlo simulation (lognormal returns, seeded and deterministic).
+Returns a success probability plus 5th/25th/50th/75th/95th percentile
+outcomes, so the plan talks in ranges rather than false precision.
+
+### portfolio_engine
+
+Maps the risk score to a strategic asset allocation via a conservative
+glidepath (even maximum risk never exceeds 75% equity). Each bucket is
+filled with tax-aware instruments from the curated asset database. The
+cash bucket is strictly cash-and-liquid products.
+
+### recommendation_engine
+
+Tax-aware instrument selection across the full asset universe, ranked by
+after-tax return. ELSS is handled specially via an IRR calculation that
+correctly models the one-time 80C entry benefit.
+
+### planner
+
+Orchestrates everything. Produces a `FinancialPlan` with a plain-language
+summary, the strategic allocation, goal outlook, and ordered explained
+actions.
+
+---
+
+## Sample users & archetypes
+
+`sample_users.py` provides:
+
+| user | profile | what the planner detects |
+|------|---------|--------------------------|
+| Ravi | 28, software engineer, Mumbai | thin emergency fund → build it first |
+| Meena | 44, business owner, tier 3 | irregular income → thicker buffer + term cover |
+| Aarav | 21, student | negative cashflow → fix the budget, don't invest |
+| Sharma | 65, retiree | complete foundations → protect capital |
+| Karan | 31, high-debt professional | over-leveraged → debt + emergency fund first |
+| Priya | 38, working parent | strong foundations → invest toward goals |
+| Vikram | 45, HNW | idle cash + under-insured → get cover, deploy surplus |
+
+---
+
+## Testing
+
+44 pytest tests cover every engine:
+
+- cashflow surplus and emergency fund logic
+- health score bounds and the emergency-fund grade ceiling
+- goal priority, feasibility and allocation ordering
+- probability determinism and boundary behaviour
+- portfolio weight conservation and liquidity of the cash bucket
+- risk capacity as a ceiling
+- the planner's action ordering and "foundations first" rule
+- asset-universe consistency and tax treatment
+
+---
+
+## Roadmap
+
+- replace fixed-return assumptions with calibrated Monte Carlo
+- monitor a portfolio over time and suggest rebalancing
+- tax-loss harvesting and instrument-level tax optimisation
+- conversational financial advice (the recommendation layer explains
+  *why this, why now, why not something else*)
+- automated detection of the financial-intelligence patterns
+  (over-insured, under-insured, idle money, unrealistic goals, ...)
 
 ---
 

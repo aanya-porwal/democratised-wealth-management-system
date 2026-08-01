@@ -16,6 +16,7 @@ htmlcov/
 
 # notebooks — keep the curated teaching notebook, ignore scratch ones
 .ipynb_checkpoints/
+models.ipynb
 
 # editor / os
 .vscode/

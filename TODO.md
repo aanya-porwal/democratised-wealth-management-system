@@ -1,18 +1,21 @@
-# Build TODO — goal-based wealth management platform
+# Goal-based financial planning core — TODO
 
-- [ ] Rename package to `wealth_management_system/` (valid python package) + `__init__.py`
-- [ ] Convert internal imports to package-absolute imports; verify baseline `python -m wealth_management_system.main`
-- [ ] Extend `models.py` (insurance cover, existing SIP, goal current contribution)
-- [ ] Create `sample_users.py` (ravi, meena + archetypes: student, retiree, high-debt, family, HNW)
-- [ ] Build `cashflow_engine.py` (surplus, savings rate, emergency fund gap, runway)
-- [ ] Build `health_engine.py` (6-dimension health score + plain-language signals)
-- [ ] Build `goal_engine.py` (priority ordering, required contribution, feasibility, surplus waterfall)
-- [ ] Build `probability_engine.py` (Monte Carlo goal success probability)
-- [ ] Build `portfolio_engine.py` (risk → target allocation + concrete instruments)
-- [ ] Build `planner.py` (orchestrates engines → explained financial plan)
-- [ ] Rewrite `main.py` as full end-to-end plan demo
-- [ ] Create `tests/` assertion suite (all archetypes + edge cases); update `tests.py` demo
-- [ ] Create canonical notebook `wealth_management_system.ipynb`; retire old notebooks
-- [ ] Update `README.md`, `requirements.txt`, add `.gitignore`
-- [ ] Run full suite, commit per engine, push to github
+## Milestone: goal-based planning pipeline (complete)
+
+- [x] Rename package to `wealth_management_system` (importable, pytest-friendly)
+- [x] `models.py` — add insurance, sip, and goal-contribution fields
+- [x] `sample_users.py` — ravi, meena + 5 life-stage archetypes
+- [x] `cashflow_engine.py` — surplus, savings rate, emergency fund
+- [x] `health_engine.py` — health score + signals; emergency fund caps grade
+- [x] `goal_engine.py` — feasibility, priority, surplus allocation
+- [x] `probability_engine.py` — monte carlo goal success probability
+- [x] `portfolio_engine.py` — risk score → strategic allocation + instruments
+- [x] `planner.py` — orchestrates all engines into an explained `FinancialPlan`
+- [x] `main.py` — entry point runs the full pipeline for every sample user
+- [x] `demo.py` — walkthrough of every public API (replaces legacy `tests.py`)
+- [x] pytest suite (44 tests across all engines)
+- [x] README rewritten for the new architecture
+- [x] `.gitignore` updated (scratch notebooks, caches)
+- [x] Run full test suite green
+- [x] Run `main.py` and `demo.py` end-to-end
 
