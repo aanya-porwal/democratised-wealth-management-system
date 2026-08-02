@@ -18,6 +18,7 @@ from app.models.simulation import SimulationResult, ScenarioAnalysis
 from app.models.audit import AuditLog
 from app.models.system import ChatSession, MarketDataCache, SystemSetting
 from app.models.auth_token import EmailVerificationToken, PasswordResetToken, RefreshToken
+from app.models.ai import AgentRunLog, KnowledgeDocument, UserMemory
 
 __all__ = [
     "Role",
@@ -41,5 +42,8 @@ __all__ = [
     "RefreshToken",
     "PasswordResetToken",
     "EmailVerificationToken",
+    "AgentRunLog",
+    "KnowledgeDocument",
+    "UserMemory",
 ]
 

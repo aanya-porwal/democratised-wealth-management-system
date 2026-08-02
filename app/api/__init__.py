@@ -10,6 +10,7 @@ tables; the FastAPI application itself is created in :mod:`app.main`.
 from fastapi import APIRouter
 
 from app.api.routes import (
+    ai,
     allocation,
     auth,
     chat,
@@ -43,6 +44,7 @@ api_router.include_router(scenarios.router, prefix="/scenarios", tags=["Scenario
 api_router.include_router(health.router, prefix="/health-score", tags=["Health Score"])
 api_router.include_router(planner.router, prefix="/planner", tags=["Planner"])
 api_router.include_router(chat.router, prefix="/chat", tags=["Chat"])
+api_router.include_router(ai.router, prefix="/ai", tags=["AI"])
 api_router.include_router(system.router, prefix="/system", tags=["System"])
 
 __all__ = ["api_router"]

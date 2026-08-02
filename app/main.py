@@ -132,6 +132,11 @@ def _start_scheduler() -> None:
             refresh_market_data_cache,
             update_goal_progress,
         )
+        from app.tasks.ai import (
+            cleanup_old_memories,
+            index_knowledge_base,
+            refresh_embeddings,
+        )
 
         _scheduler.add_job(
             refresh_market_data_cache,
@@ -152,6 +157,27 @@ def _start_scheduler() -> None:
             "interval",
             hours=24,
             id="goal_progress_update",
+            max_instances=1,
+        )
+        _scheduler.add_job(
+            cleanup_old_memories,
+            "interval",
+            hours=24,
+            id="ai_memory_cleanup",
+            max_instances=1,
+        )
+        _scheduler.add_job(
+            index_knowledge_base,
+            "interval",
+            hours=24,
+            id="ai_knowledge_index",
+            max_instances=1,
+        )
+        _scheduler.add_job(
+            refresh_embeddings,
+            "interval",
+            hours=168,
+            id="ai_embeddings_refresh",
             max_instances=1,
         )
 
