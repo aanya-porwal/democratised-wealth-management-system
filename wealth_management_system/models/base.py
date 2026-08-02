@@ -376,4 +376,3 @@ class AssetClassProfile:
     sip_possible: bool  # can invest monthly
 
     description: str
-

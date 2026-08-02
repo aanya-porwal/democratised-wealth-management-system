@@ -1,4 +1,12 @@
 numpy>=1.24,<3
 pandas>=2.0,<3
+scipy>=1.10
+PyYAML>=6.0
 pytest>=7.4
+# optional — only required for utilities/plotting (histogram, efficient frontier)
+matplotlib>=3.7
+# optional — code quality
+black>=23.0
+ruff>=0.1
+mypy>=1.0
 

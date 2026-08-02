@@ -1,21 +1,15 @@
-# Goal-based financial planning core — TODO
+# Production Backend — Implementation TODO
 
-## Milestone: goal-based planning pipeline (complete)
+## Milestone: complete the FastAPI + PostgreSQL backend around the financial engine
 
-- [x] Rename package to `wealth_management_system` (importable, pytest-friendly)
-- [x] `models.py` — add insurance, sip, and goal-contribution fields
-- [x] `sample_users.py` — ravi, meena + 5 life-stage archetypes
-- [x] `cashflow_engine.py` — surplus, savings rate, emergency fund
-- [x] `health_engine.py` — health score + signals; emergency fund caps grade
-- [x] `goal_engine.py` — feasibility, priority, surplus allocation
-- [x] `probability_engine.py` — monte carlo goal success probability
-- [x] `portfolio_engine.py` — risk score → strategic allocation + instruments
-- [x] `planner.py` — orchestrates all engines into an explained `FinancialPlan`
-- [x] `main.py` — entry point runs the full pipeline for every sample user
-- [x] `demo.py` — walkthrough of every public API (replaces legacy `tests.py`)
-- [x] pytest suite (44 tests across all engines)
-- [x] README rewritten for the new architecture
-- [x] `.gitignore` updated (scratch notebooks, caches)
-- [x] Run full test suite green
-- [x] Run `main.py` and `demo.py` end-to-end
+- [x] Audit existing backend modules and financial engine API surface
+- [ ] **A. Fix mismatched modules** (settings, exceptions, audit model/repo, simulation schema/repo/service, health repo/service, recommendation model/repo, planner service)
+- [ ] **B. Alembic setup** — alembic.ini, migrations/env.py, script.py.mako, initial migration (PG-compatible, hand-authored from ORM metadata, autogenerate-ready)
+- [ ] **C. Routers + app/main.py** — wire middleware, CORS, exception handlers, rate limiting, all routers, /docs metadata
+- [ ] **D. app/api/ + app/dependencies/ structural shims**
+- [ ] **E. Background tasks** — app/tasks (market data refresh, portfolio snapshot generation, goal progress updates, notification prep) + APScheduler wiring
+- [ ] **F. Docker + requirements.txt** — backend deps, Dockerfile, docker-compose.yml (backend, postgres, redis, pgadmin), .env.example
+- [ ] **G. Backend pytest suite** — conftest (test DB + client + auth), tests for auth/API/repositories/services/engine integration
+- [ ] **H. Docs** — .gitignore update, README.md backend section, TODO completion
+- [ ] **I. End-to-end verification** — install deps, run backend tests, run engine tests (100+ green), boot uvicorn
 

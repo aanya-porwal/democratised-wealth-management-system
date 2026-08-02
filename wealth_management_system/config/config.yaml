@@ -1,0 +1,152 @@
+# ─────────────────────────────────────────────────────────────────────
+# Wealth Management System — Central Configuration
+#
+# Every tunable constant lives here so the engines stay free of magic
+# numbers. Values are read once per process by config.py and exposed as
+# a typed WealthConfig dataclass.
+# ─────────────────────────────────────────────────────────────────────
+
+inflation:
+  # long-run Indian CPI assumption used to inflate goal targets
+  default_rate: 0.06
+  # goal types that are typically inflation-linked (education, retirement, etc.)
+  inflation_linked_goals: ["education_self", "education_child", "retirement", "home_purchase", "wedding"]
+  # goal types whose target is treated as already nominal (no adjustment)
+  nominal_goals: ["emergency_fund", "vehicle", "travel", "wealth_creation"]
+
+goal:
+  # default expected return for goal corpus projection (real, pre-tax)
+  default_expected_return: 0.07
+  # default inflation rate for a goal when none is supplied
+  default_inflation: 0.06
+  # feasibility threshold for the legacy goal engine
+  feasibility_threshold: 0.60
+  # probability bands for the goal engine verdict
+  on_track_threshold: 0.80
+  at_risk_threshold: 0.50
+
+risk:
+  # capacity weights (must sum to 1.0)
+  capacity_weights:
+    emergency_fund: 0.30
+    income_stability: 0.25
+    debt_burden: 0.20
+    surplus_ratio: 0.15
+    dependents: 0.10
+  # tolerance combination weights
+  tolerance_stated_weight: 0.40
+  tolerance_drawdown_weight: 0.40
+  # final blend of tolerance and capacity
+  tolerance_blend: 0.45
+  capacity_blend: 0.55
+  # category bands (0-1 scale)
+  categories:
+    very_conservative_max: 0.20
+    conservative_max: 0.40
+    moderate_max: 0.60
+    aggressive_max: 0.75
+
+health:
+  # factor weights for the enhanced health score (sum to 1.0)
+  factor_weights:
+    emergency_fund: 0.15
+    debt: 0.12
+    savings_rate: 0.15
+    insurance: 0.12
+    investment_rate: 0.12
+    diversification: 0.10
+    goal_progress: 0.12
+    tax_efficiency: 0.06
+    return: 0.06
+  # emergency fund caps on the total score
+  ef_missing_cap: 39
+  ef_building_cap: 69
+  # grade bands
+  excellent_min: 80
+  good_min: 60
+  fair_min: 40
+  poor_min: 20
+
+simulation:
+  default_simulations: 10000
+  min_simulations: 1000
+  max_simulations: 100000
+  default_mean_return: 0.07
+  default_volatility: 0.12
+  default_inflation: 0.06
+  rng_seed: 42
+  # percentiles reported to the user
+  percentiles: [0.05, 0.25, 0.50, 0.75, 0.95]
+  # how many histogram bins for plotting
+  histogram_bins: 50
+
+optimization:
+  # mean-variance optimizer bounds and constraints
+  default_risk_free_rate: 0.055
+  min_allocation: 0.0
+  max_allocation: 0.50
+  max_volatility: 0.16
+  # liquidity constraints: assets below this liquidity score are capped
+  min_liquidity_score: 0.0
+  # penalty applied per unit of illiquidity in the objective
+  liquidity_penalty: 0.02
+  # minimum variance (used when a specific target volatility is requested)
+  min_variance_floor: 1.0e-6
+
+rebalancing:
+  # absolute weight drift that triggers a rebalance
+  absolute_drift_threshold: 0.05
+  # relative drift (weight change as fraction of target) that triggers
+  relative_drift_threshold: 0.20
+  # minimum trade size as a fraction of portfolio value (avoid noise trades)
+  min_trade_fraction: 0.01
+  # transaction cost as a fraction of traded amount
+  transaction_cost_rate: 0.001
+  # capital gains tax rate applied to realized gains on rebalance
+  capital_gains_tax_rate: 0.10
+  # if the portfolio value is below this, a rebalance is not worth it
+  min_portfolio_value: 10000
+
+tax:
+  equity_ltcg_rate: 0.10
+  equity_stcg_rate: 0.15
+  debt_rate_uses_slab: true
+  # annual Section 80C limit
+  sec_80c_limit: 150000
+  # additional NPS 80CCD(1B) limit
+  sec_80ccd_1b_limit: 50000
+  # LTCG exemption threshold
+  equity_ltcg_exemption: 100000
+  # sovereign gold bond interest rate
+  sgb_interest_rate: 0.025
+
+scenario:
+  # default severity multipliers used by scenario adjustments
+  salary_increase_pct: 0.15
+  salary_decrease_pct: 0.15
+  market_crash_drawdown: 0.30
+  emergency_expense_months: 3.0
+
+asset:
+  # glidepath anchors: (risk_score, equity_weight) — same as portfolio_engine
+  equity_weight_by_score:
+    - [20, 0.10]
+    - [35, 0.25]
+    - [50, 0.40]
+    - [65, 0.55]
+    - [80, 0.65]
+    - [100, 0.75]
+  # residual non-equity split
+  debt_default_share: 0.80
+  gold_share: 0.10
+  cash_share: 0.10
+  # tax-advantaged caps as a fraction of total portfolio
+  max_elss_fraction: 0.25
+  max_ppf_fraction: 0.25
+  max_nps_fraction: 0.15
+  max_epf_fraction: 0.20
+  max_fixed_deposit_fraction: 0.30
+  max_cash_fraction: 0.10
+  max_reit_fraction: 0.10
+  max_international_fraction: 0.20
+
