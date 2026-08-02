@@ -74,10 +74,26 @@ class BaseAppSettings(BaseSettings):
     LOG_LEVEL: str = "INFO"
     LOG_JSON: bool = False
 
-    # ── background tasks ────────────────────────────────────────────
+# ── background tasks ────────────────────────────────────────────
     SCHEDULER_ENABLED: bool = True
     MARKET_DATA_REFRESH_HOURS: int = 6
     SNAPSHOT_GENERATION_HOURS: int = 24
+
+    # ── AI / LLM ────────────────────────────────────────────────────
+    AI_LLM_PROVIDER: str = "ollama"
+    AI_LLM_MODEL: str = "llama3"
+    AI_EMBEDDING_PROVIDER: str = "sentence_transformers"
+    AI_EMBEDDING_MODEL: str = "all-MiniLM-L6-v2"
+    AI_VECTOR_STORE: str = "faiss"
+    AI_RAG_ENABLED: bool = True
+    AI_MEMORY_ENABLED: bool = True
+    AI_CRITIC_ENABLED: bool = True
+    AI_COMPLIANCE_ENABLED: bool = True
+    AI_DATA_VALIDATION_ENABLED: bool = True
+    AI_OBSERVABILITY_ENABLED: bool = True
+    AI_MEMORY_RETENTION_DAYS: int = 365
+    AI_MAX_TOOL_CALLS: int = 10
+    AI_KNOWLEDGE_INDEX_PATH: str = "data/knowledge_index"
 
     # ── derived properties ──────────────────────────────────────────
 
