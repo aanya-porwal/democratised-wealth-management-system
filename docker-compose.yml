@@ -1,0 +1,89 @@
+# ─────────────────────────────────────────────────────────────────────
+# Wealth Management System — full local stack
+#
+#   docker compose up --build
+#
+# Services:
+#   backend   — FastAPI app (auto-migrates on start, then runs uvicorn)
+#   postgres  — PostgreSQL 16 (persistent volume)
+#   redis     — cache / sessions / rate-limit / future AI memory
+#   pgadmin   — optional DB browser (http://localhost:5050)
+# ─────────────────────────────────────────────────────────────────────
+
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: wms-backend
+    env_file:
+      - .env
+    environment:
+      APP_ENV: development
+      DATABASE_URL: postgresql+psycopg2://wealth:wealth@postgres:5432/wealth_db
+      REDIS_URL: redis://redis:6379/0
+      SCHEDULER_ENABLED: "true"
+    ports:
+      - "8000:8000"
+    volumes:
+      # Bind-mount the source for hot reload during local development.
+      - .:/srv/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    command: >
+      sh -c "alembic upgrade head &&
+             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: wms-postgres
+    environment:
+      POSTGRES_USER: wealth
+      POSTGRES_PASSWORD: wealth
+      POSTGRES_DB: wealth_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wealth -d wealth_db"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: wms-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: wms-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@wealth.local
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    depends_on:
+      - postgres
+    profiles: ["tools"]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  redis_data:
+

@@ -1,0 +1,283 @@
+# ─────────────────────────────────────────────────────────────────────
+# Security Selection & Investment Research Platform — Central Config
+#
+# Every tunable constant lives here so the engines stay free of magic
+# numbers. Values are read once per process by config.py and exposed as
+# a typed SecuritySelectionConfig dataclass.
+# ─────────────────────────────────────────────────────────────────────
+
+scoring:
+  # factor weights (sum to 1.0). Applied by WeightedScoreModel.
+  factor_weights:
+    return_factor: 0.20
+    risk_factor: 0.15
+    cost_factor: 0.15
+    liquidity_factor: 0.10
+    quality_factor: 0.10
+    diversification_factor: 0.10
+    tax_factor: 0.05
+    tracking_factor: 0.05
+    credit_quality_factor: 0.05
+    market_exposure_factor: 0.05
+  # each factor score is 0..1; the overall score is the weighted sum * 100
+  score_scale: 100
+  # minimum score a security needs to be considered a recommendation
+  min_recommendable_score: 60.0
+
+ranking:
+  # how many securities to return per tier
+  top_n: 20
+  top_n_10: 10
+  top_n_5: 5
+  # number of alternatives to surface next to the best pick
+  alternative_count: 4
+  # confidence is derived from data completeness & score gap
+  completeness_weight: 0.5
+  score_gap_weight: 0.5
+
+optimization:
+  # how many top-ranked securities to consider when building a portfolio
+  candidate_pool_size: 5
+  # if the best single security already captures this share of the target
+  # bucket weight, prefer a single-security recommendation
+  single_security_coverage_threshold: 0.85
+  # minimum diversification benefit (portfolio risk reduction) before the
+  # optimizer splits across multiple securities
+  min_diversification_benefit: 0.05
+  # configurable constraints for the optimizer
+  min_weight: 0.05
+  max_weight: 0.60
+  min_liquidity_score: 0.30
+  target_portfolio_count: 3
+  risk_free_rate: 0.055
+  max_volatility: 0.30
+
+filters:
+  # default filter limits; users may override these at request time.
+  min_aum_crore: 100.0          # minimum AUM in ₹ crores for funds
+  max_expense_ratio: 0.0125     # maximum TER as a fraction (1.25%)
+  min_liquidity_score: 0.30     # normalized liquidity floor
+  min_age_years: 3.0            # minimum track record / inception age
+  min_credit_rating: "AA"       # for bonds
+  min_avg_volume: 100000.0      # minimum average daily traded volume
+  min_aum_ratio_floor: 0.001    # smallest permitted AUM (absolute guard)
+
+providers:
+  # ordered fallback chain used by the FallbackProvider
+  order:
+    - yfinance
+    - mfapi
+    - rbi
+    - static
+  # per-provider timeouts & retries (seconds)
+  timeout_seconds: 15
+  retries: 2
+  yfinance:
+    enabled: true
+    max_history_years: 10
+  mfapi:
+    enabled: true
+    base_url: "https://api.mfapi.in"
+  rbi:
+    enabled: true
+    base_url: "https://rbi.org.in"
+  static:
+    enabled: true
+
+cache:
+  # provider-independent cache TTLs (seconds)
+  default_ttl_seconds: 3600
+  price_ttl_seconds: 900
+  nav_ttl_seconds: 3600
+  history_ttl_seconds: 86400
+  snapshot_ttl_seconds: 86400
+  # how aggressively stale cached data may be used before failing
+  max_staleness_seconds: 604800
+  # prune cache entries older than this
+  cleanup_older_than_days: 30
+
+quality:
+  # data-quality thresholds
+  max_missing_fraction: 0.25        # >25% missing → treat series as unreliable
+  max_duplicate_fraction: 0.02
+  stale_price_days: 5
+  outlier_zscore: 4.0
+  min_history_points: 60            # ~3 months daily points before metrics
+  max_return_jump: 0.50             # single-day |return| above 50% → outlier
+  invalid_nav_min: 0.01
+  allow_cache_fallback: true
+
+refresh:
+  # background job cadence (hours)
+  market_data_hours: 6
+  rankings_hours: 24
+  metrics_hours: 24
+  snapshots_hours: 24
+  holdings_hours: 168
+  cache_clean_hours: 24
+
+report:
+  # research report configuration
+  include_metrics_table: true
+  include_factor_scores: true
+  include_strengths_weaknesses: true
+  include_risk_summary: true
+  include_data_sources: true
+  max_universe_display: 50
+
+comparison:
+  # comparison engine behaviour
+  max_securities: 10
+  winner_metric_priority:
+    - overall_score
+    - sharpe_ratio
+    - expense_ratio
+  require_same_asset_class: false
+
+# ── Evaluators ─────────────────────────────────────────────────────
+# Per-target-asset-class discovery catalogs. The ``universe`` list is
+# the curated default set of symbols an evaluator discovers when no
+# search query is supplied. ``provider_kind`` tells the provider chain
+# which SecurityKind the identity must carry.
+evaluators:
+  large_cap_equity:
+    universe:
+      - "NIFTYBEES.NS"
+      - "HDFC50.NS"
+      - "UTINIFTY.NS"
+      - "ICICINIFTY.NS"
+      - "NIFTYIETF.NS"
+      - "SBIETF50.NS"
+      - "BSLNIFTY.NS"
+      - "LICNFNHGP.NS"
+    provider_kind: "etf"
+    max_candidates: 30
+    default_exchange: "NSE"
+  mid_cap_equity:
+    universe:
+      - "MID150BEES.NS"
+      - "MIDSELIETF.NS"
+      - "MOM100.NS"
+    provider_kind: "etf"
+    max_candidates: 20
+    default_exchange: "NSE"
+  small_cap_equity:
+    universe:
+      - "SMALLCAP.NS"
+      - "SMALL250.NS"
+    provider_kind: "etf"
+    max_candidates: 20
+    default_exchange: "NSE"
+  flexi_cap_equity:
+    universe:
+      - "NIFTYBEES.NS"
+      - "MOM100.NS"
+    provider_kind: "etf"
+    max_candidates: 20
+    default_exchange: "NSE"
+  elss:
+    universe:
+      - "0P0000X8QX.BO"  # resolved via MFAPI scheme search at runtime
+    provider_kind: "mutual_fund"
+    max_candidates: 30
+    default_exchange: null
+  index_fund:
+    universe:
+      - "0P0000X8QX.BO"
+    provider_kind: "mutual_fund"
+    max_candidates: 30
+    default_exchange: null
+  corporate_bonds:
+    universe: []
+    provider_kind: "corporate_bond"
+    max_candidates: 30
+    default_exchange: null
+  government_bonds:
+    universe: []
+    provider_kind: "government_bond"
+    max_candidates: 30
+    default_exchange: null
+  gold_etf:
+    universe:
+      - "GOLDBEES.NS"
+      - "HDFCGOLD.NS"
+      - "GOLDCASE.NS"
+      - "IDBIGOLD.NS"
+      - "SBIETFGOLD.NS"
+      - "SETFGOLD.NS"
+      - "GOLDETF.NS"
+      - "ICICIGOLD.NS"
+    provider_kind: "etf"
+    max_candidates: 20
+    default_exchange: "NSE"
+  sgb:
+    universe:
+      - "SGB2025"
+      - "SGB2026"
+      - "SGB2027"
+      - "SGB2028"
+      - "SGB2029"
+      - "SGB2030"
+      - "SGB2031"
+    provider_kind: "sgb"
+    max_candidates: 20
+    default_exchange: null
+  reits:
+    universe:
+      - "EMBASSY.NS"
+      - "MINDTREE.NS"
+      - "BROOKFIELD.NS"
+    provider_kind: "reit"
+    max_candidates: 20
+    default_exchange: "NSE"
+  invits:
+    universe:
+      - "IRBINVIT.NS"
+      - "POWERIND.NS"
+      - "NFLINVIT.NS"
+    provider_kind: "invit"
+    max_candidates: 20
+    default_exchange: "NSE"
+  fixed_deposits:
+    universe:
+      - "FD_SBI"
+      - "FD_HDFC"
+      - "FD_ICICI"
+      - "FD_AXIS"
+      - "FD_KOTAK"
+      - "FD_BAJAJ"
+    provider_kind: "fixed_deposit"
+    max_candidates: 20
+    default_exchange: null
+  ppf:
+    universe:
+      - "PPF"
+    provider_kind: "ppf"
+    max_candidates: 5
+    default_exchange: null
+  nps:
+    universe:
+      - "NPS_TIER1"
+      - "NPS_TIER2"
+    provider_kind: "nps"
+    max_candidates: 5
+    default_exchange: null
+  international_etf:
+    universe:
+      - "VOO"
+      - "QQQ"
+      - "SPY"
+      - "EEM"
+      - "VTI"
+      - "IJR"
+    provider_kind: "international_etf"
+    max_candidates: 20
+    default_exchange: "US"
+  international_fund:
+    universe:
+      - "0P0000X8QX.BO"
+    provider_kind: "mutual_fund"
+    max_candidates: 30
+    default_exchange: null
+
+
