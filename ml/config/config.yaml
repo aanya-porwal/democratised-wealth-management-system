@@ -1,0 +1,188 @@
+# ─────────────────────────────────────────────────────────────────────
+# Intelligent Learning & Simulation Platform — Central Config
+#
+# Every tunable constant for the ML platform lives here so the engines
+# stay free of magic numbers. Values are read once per process by
+# config.py and exposed as a typed MLConfig dataclass.
+# ─────────────────────────────────────────────────────────────────────
+
+reproducibility:
+  seed: 42
+  # When true, the platform refuses to run unless a seed is fixed.
+  require_seed: true
+
+population:
+  default_size: 100000
+  # City tiers by population share (sums to 1.0)
+  city_tiers:
+    tier1: 0.30
+    tier2: 0.40
+    tier3: 0.30
+  # Age distribution (years)
+  age_range: [18, 80]
+  gender_share_female: 0.48
+  # Income distribution parameters (monthly, INR, lognormal)
+  income:
+    log_mean: 10.5
+    log_std: 0.85
+    min_monthly: 8000
+    max_monthly: 5000000
+  # Correlation structure for the Gaussian copula sampler.
+  # matrix is symmetric, comma-separated on the diagonal = 1.0
+  correlation:
+    variables: [age, education, income, savings, risk_tolerance]
+    matrix:
+      - [1.0, 0.40, 0.55, 0.45, 0.20]
+      - [0.40, 1.0, 0.60, 0.50, 0.30]
+      - [0.55, 0.60, 1.0, 0.70, 0.25]
+      - [0.45, 0.50, 0.70, 1.0, 0.35]
+      - [0.20, 0.30, 0.25, 0.35, 1.0]
+
+persona:
+  # number of archetypes to build
+  n_archetypes: 24
+  # iterations per archetype to generate variations
+  variations_per_archetype: 500
+
+life_events:
+  # annual base probabilities
+  promotion_probability: 0.12
+  marriage_probability: 0.06
+  childbirth_probability: 0.08
+  house_purchase_probability: 0.04
+  vehicle_purchase_probability: 0.06
+  inheritance_probability: 0.02
+  medical_emergency_probability: 0.10
+  job_loss_probability: 0.05
+  career_switch_probability: 0.03
+  business_success_probability: 0.15
+  business_failure_probability: 0.10
+  retirement_age: 60
+  # annual mortality hazard (age-dependent, base multiplier)
+  mortality_base: 0.004
+
+market:
+  # asset universe used by the market simulator
+  assets:
+    - nifty
+    - sensex
+    - gold
+    - bond_yield
+    - fd_rate
+    - inflation
+    - repo_rate
+    - interest_rate
+    - international_etf
+  # sharpe / vol for synthetic regime fallback when no real data
+  annual_returns:
+    nifty: 0.12
+    sensex: 0.12
+    gold: 0.09
+    bond_yield: 0.07
+    fd_rate: 0.06
+    inflation: 0.05
+    repo_rate: 0.06
+    interest_rate: 0.06
+    international_etf: 0.10
+  annual_vols:
+    nifty: 0.16
+    sensex: 0.16
+    gold: 0.14
+    bond_yield: 0.05
+    fd_rate: 0.01
+    inflation: 0.02
+    repo_rate: 0.02
+    interest_rate: 0.02
+    international_etf: 0.18
+  history_years: 15
+  # when true, try to fetch real historical data via yfinance
+  fetch_real: true
+  # when real data missing, fall back to bundled static seed
+  static_seed_path: "data/static_market_seed.csv"
+
+recommendation:
+  # decision types to simulate
+  categories: [asset_allocation, risk_rebalance, goal_funding, insurance, tax, security_selection]
+  # interaction outcomes
+  outcomes: [accepted, rejected, ignored, modified]
+  # base acceptance probability per category
+  acceptance:
+    asset_allocation: 0.45
+    risk_rebalance: 0.35
+    goal_funding: 0.55
+    insurance: 0.30
+    tax: 0.40
+    security_selection: 0.50
+
+feature_engineering:
+  # broad feature families to build
+  families: [behaviour, market, portfolio, goal, risk, financial_ratios, interaction, historical]
+  # historical lookback steps
+  lookback_steps: 12
+
+datasets:
+  train_fraction: 0.70
+  validation_fraction: 0.15
+  test_fraction: 0.15
+  # export formats
+  formats: [csv, parquet, database]
+  # database writer settings (optional, not required)
+  database:
+    enabled: false
+    url: ""
+
+training:
+  # classification + regression tasks
+  tasks:
+    recommendation_acceptance: classification
+    behaviour_segment: classification
+    risk_category: classification
+    net_worth_projection: regression
+    goal_success_probability: regression
+  # which learners to run (all optional)
+  learners:
+    random_forest: true
+    xgboost: true
+    lightgbm: true
+    catboost: true
+    logistic_regression: true
+    linear_regression: true
+    gradient_boosting: true
+  # cross-validation folds
+  cv_folds: 5
+  # hyperparameter grids (space-separated)
+  hyperparameters:
+    random_forest: "n_estimators=100:200:300 max_depth=5:10:15"
+    xgboost: "n_estimators=100:200 max_depth=3:6"
+    lightgbm: "n_estimators=100:200 num_leaves=31:63"
+    catboost: "iterations=100:200 depth=4:6"
+    gradient_boosting: "n_estimators=100:200 max_depth=3:5"
+
+evaluation:
+  # thresholds for model selection winner
+  ranking_metric: "auc"   # for classification
+  regression_metric: "rmse"
+  # choose best by this criterion (min or max)
+  maximize: true
+
+experiments:
+  # MLflow tracking — optional. If mlflow not installed, falls back to
+  # local JSON artifacts under experiments/.
+  tracking_uri: ""
+  experiment_name: "wealth_ml_platform"
+  # local fallback artifact dir (relative to ml package)
+  artifact_dir: "experiments"
+  registry_dir: "models/registry"
+
+shadow:
+  # store shadow predictions
+  store: true
+  # store rule-engine output for comparison
+  store_rule_output: true
+
+monitoring:
+  # drift detection thresholds
+  psi_threshold: 0.2
+  data_quality:
+    max_missing_fraction: 0.25
+    max_duplicate_fraction: 0.02
