@@ -25,6 +25,13 @@ async def test_run_simulation(
     data = resp.json()
     assert "statistics" in data
 
+    # The NOT NULL horizon column must be populated from the request.
+    from app.models.simulation import SimulationResult
+
+    record = db_session.query(SimulationResult).first()
+    assert record is not None
+    assert record.horizon_years == 20
+
 
 @pytest.mark.asyncio
 async def test_run_scenario(

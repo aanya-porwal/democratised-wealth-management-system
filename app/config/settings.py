@@ -45,6 +45,8 @@ class BaseAppSettings(BaseSettings):
     API_V1_PREFIX: str = "/api/v1"
     # Comma-separated list of allowed CORS origins.
     CORS_ORIGINS: list[str] = ["http://localhost:3000", "http://localhost:8000"]
+    # Comma-separated list of allowed host names (TrustedHostMiddleware).
+    ALLOWED_HOSTS: list[str] = ["localhost", "127.0.0.1", "test", "testserver"]
 
     # ── security ────────────────────────────────────────────────────
     SECRET_KEY: str = "change-me-in-production"
@@ -118,6 +120,14 @@ class BaseAppSettings(BaseSettings):
         """Accept either a JSON list or a comma-separated string."""
         if isinstance(value, str):
             return [origin.strip() for origin in value.split(",") if origin.strip()]
+        return value
+
+    @field_validator("ALLOWED_HOSTS", mode="before")
+    @classmethod
+    def _split_allowed_hosts(cls, value: object) -> object:
+        """Accept either a JSON list or a comma-separated string."""
+        if isinstance(value, str):
+            return [host.strip() for host in value.split(",") if host.strip()]
         return value
 
 

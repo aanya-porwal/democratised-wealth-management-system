@@ -32,6 +32,7 @@ from wealth_management_system.models import (  # type: ignore
 # ── engine exceptions forwarded to the error handlers ────────────────
 from wealth_management_system.exceptions import WealthManagementError  # type: ignore
 
+from app.core.exceptions import NotFoundError
 from app.models import (
     BehavioralProfile as DBBehavioralProfile,
     FinancialProfile as DBFinancialProfile,
@@ -75,6 +76,21 @@ def load_engine_parts(session, user: User):
         select(DBBehavioralProfile).where(DBBehavioralProfile.user_id == user.id)
     ).scalars().first()
     goals = GoalRepository(session).list_for_user(user.id)
+
+    # Financial and behavioral profiles are genuinely required to build the
+    # engine aggregate; without them the engine crashes with AttributeError.
+    # The profile endpoints already surface these as 404s, so mirror that.
+    if financial is None:
+        raise NotFoundError(
+            "Financial profile is required for this operation",
+            code="financial_profile_not_found",
+        )
+    if behavioral is None:
+        raise NotFoundError(
+            "Behavioral profile is required for this operation",
+            code="behavioral_profile_not_found",
+        )
+
     return profile, financial, behavioral, goals
 
 

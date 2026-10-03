@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import uuid
+
 import pytest
 from httpx import AsyncClient
 
@@ -74,3 +76,30 @@ async def test_risk_assessment(
     assert resp.status_code == 200
     data = resp.json()
     assert "final_score_100" in data
+
+
+@pytest.mark.asyncio
+async def test_missing_profile_returns_clean_error(async_client: AsyncClient, db_session) -> None:
+    """A user without a financial profile must get a clean 404, not a 500."""
+    import hashlib
+
+    from app.auth.jwt import create_token_pair
+    from app.models.user import Role, User
+
+    user = User(
+        id=uuid.uuid4(),
+        email="noprofile@example.com",
+        password_hash=hashlib.sha256(b"password123").hexdigest(),
+        full_name="No Profile",
+        role=Role.USER,
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.flush()
+
+    tokens = create_token_pair(subject=str(user.id), role=user.role.value)
+    headers = {"Authorization": f"Bearer {tokens['access_token']}"}
+
+    resp = await async_client.post("/api/v1/health-score", headers=headers)
+    assert resp.status_code == 404
+    assert resp.json()["error"]["code"] == "financial_profile_not_found"

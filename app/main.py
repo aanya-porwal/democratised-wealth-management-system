@@ -85,9 +85,7 @@ def create_app() -> FastAPI:
     # ── middleware order (last added = first executed) ────────────────
     app.add_middleware(
         TrustedHostMiddleware,
-        allowed_hosts=settings.CORS_ORIGINS
-        if settings.CORS_ORIGINS != ["*"]
-        else ["*"],
+        allowed_hosts=settings.ALLOWED_HOSTS,
     )
     app.add_middleware(RequestContextMiddleware)
     configure_cors(app)

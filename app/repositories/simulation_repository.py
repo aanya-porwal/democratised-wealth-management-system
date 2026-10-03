@@ -23,8 +23,16 @@ class SimulationRepository(BaseRepository[SimulationResult]):
         self,
         *,
         user_id: uuid.UUID,
+        horizon_years: float,
+        expected_return: float,
+        volatility: float,
+        inflation: float,
+        monthly_investment: float,
         goal_id: uuid.UUID | None = None,
         simulation_type: str = "monte_carlo",
+        simulations: int = 10000,
+        initial_corpus: float = 0.0,
+        target_amount: float | None = None,
         parameters: dict | None = None,
         statistics: dict | None = None,
         median: float | None = None,
@@ -33,6 +41,9 @@ class SimulationRepository(BaseRepository[SimulationResult]):
     ) -> SimulationResult:
         """Create a persisted simulation result row.
 
+        ``horizon_years``/``expected_return``/``volatility``/``inflation``/
+        ``monthly_investment`` are NOT NULL columns on the model, so the
+        caller must pass the request values through (the service does).
         ``parameters``/``statistics``/``percentiles`` are stored as JSON
         columns; the model stores the whole ``parameters`` dict directly.
         """
@@ -40,6 +51,14 @@ class SimulationRepository(BaseRepository[SimulationResult]):
             user_id=user_id,
             goal_id=goal_id,
             simulation_type=simulation_type,
+            simulations=simulations,
+            horizon_years=horizon_years,
+            expected_return=expected_return,
+            volatility=volatility,
+            inflation=inflation,
+            monthly_investment=monthly_investment,
+            initial_corpus=initial_corpus,
+            target_amount=target_amount,
             parameters=parameters if isinstance(parameters, dict) else json.loads(parameters or "{}"),
             statistics=statistics if isinstance(statistics, dict) else None,
             median=median,

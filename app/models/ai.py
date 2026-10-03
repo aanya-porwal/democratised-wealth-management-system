@@ -44,7 +44,7 @@ class UserMemory(UUIDPrimaryKey, TimestampMixin, SoftDeleteMixin, Base):
         String(32), default="conversation", nullable=False
     )
     content: Mapped[str] = mapped_column(Text, nullable=False)
-    metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    meta: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
     embedding: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     importance: Mapped[int] = mapped_column(Integer, default=1, nullable=False)
     expires_at: Mapped[datetime | None] = mapped_column(UTCDateTime, nullable=True)
@@ -60,5 +60,5 @@ class KnowledgeDocument(UUIDPrimaryKey, TimestampMixin, SoftDeleteMixin, Base):
     source: Mapped[str] = mapped_column(String(128), default="manual", nullable=False)
     category: Mapped[str] = mapped_column(String(64), default="general", nullable=False, index=True)
     embedding: Mapped[dict | None] = mapped_column(JSON, nullable=True)
-    metadata: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    meta: Mapped[dict | None] = mapped_column("metadata", JSON, nullable=True)
     version: Mapped[str | None] = mapped_column(String(16), nullable=True)

@@ -1,0 +1,15 @@
+# Preserve the existing Windows CRLF line endings across the repository.
+# The project is developed on Windows and every text file uses CRLF; this
+# makes that behaviour explicit and stable regardless of client settings.
+* text=auto eol=crlf
+
+# Mark common binary assets so they are never line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.woff binary
+*.woff2 binary
+*.ttf binary

@@ -28,3 +28,7 @@ Thumbs.db
 .env
 *.key
 
+# node / local artifacts
+node_modules/
+*.db
+

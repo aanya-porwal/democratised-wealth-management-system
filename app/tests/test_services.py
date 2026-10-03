@@ -11,6 +11,8 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.database.base import Base
 from app.models.user import Role, User
+from app.models.behavioral_profile import BehavioralProfile
+from app.models.financial_profile import FinancialProfile
 from app.repositories.user_repository import UserRepository
 from app.services.auth_service import AuthService
 from app.services.user_service import UserService
@@ -41,8 +43,8 @@ class TestAuthService:
         assert user.email == "new@test.com"
 
         result = svc.login("new@test.com", "StrongPass1!")
-        assert "access_token" in result.model_dump()
-        assert "refresh_token" in result.model_dump()
+        assert "access_token" in result.model_dump()["tokens"]
+        assert "refresh_token" in result.model_dump()["tokens"]
 
     def test_register_duplicate(self, svc_session: Session) -> None:
         from app.schemas.auth import RegisterRequest
@@ -89,6 +91,27 @@ class TestHealthService:
         user = user_repo.create(
             email="hservice@test.com", password_hash="hash", full_name="H", role=Role.USER
         )
+        # The engine aggregate needs a complete profile (B9): without these
+        # rows the health service now returns a clean 404 instead of a score.
+        svc_session.add(
+            FinancialProfile(
+                user_id=user.id,
+                monthly_income=100000.0,
+                employment_type="salaried_private",
+                income_stability=0.8,
+                monthly_fixed_expenses=30000.0,
+                monthly_variable_expenses=20000.0,
+                emergency_fund_months=6.0,
+            )
+        )
+        svc_session.add(
+            BehavioralProfile(
+                user_id=user.id,
+                risk_tolerance="moderate",
+                drawdown_reaction_score=3,
+            )
+        )
+        svc_session.flush()
 
         svc = HealthService(svc_session)
         result = svc.compute(user, persist=False)

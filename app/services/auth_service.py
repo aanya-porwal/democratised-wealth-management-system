@@ -58,7 +58,7 @@ class AuthService:
         return user
 
     def issue_tokens(self, user: User) -> TokenPair:
-        pair = create_token_pair(str(user.id), user.role.value)
+        pair = create_token_pair(subject=str(user.id), role=user.role.value)
         tokens = TokenPair(
             access_token=pair["access_token"],
             refresh_token=pair["refresh_token"],
@@ -95,7 +95,7 @@ class AuthService:
         if cache.cache.is_jwt_blacklisted(payload["jti"]):
             raise AuthenticationError("Refresh token revoked", code="token_revoked")
 
-        user = self.users.get(payload["sub"])
+        user = self.users.get(uuid.UUID(payload["sub"]))
         if user is None or not user.is_active:
             raise AuthenticationError("User not found", code="user_inactive")
 
@@ -105,7 +105,7 @@ class AuthService:
         if existing is not None and existing.revoked_at is None:
             self.users.revoke_refresh_token(existing)
 
-        new_pair = create_token_pair(str(user.id), user.role.value)
+        new_pair = create_token_pair(subject=str(user.id), role=user.role.value)
         tokens = TokenPair(
             access_token=new_pair["access_token"],
             refresh_token=new_pair["refresh_token"],
@@ -159,12 +159,12 @@ class AuthService:
 
     # ── password reset (structure) ──────────────────────────────────
 
-    def request_password_reset(self, email: str) -> str:
+    def request_password_reset(self, email: str) -> str | None:
         """Create a reset token. Returns the token (in production this is emailed)."""
         user = self.users.get_by_email(email)
         if user is None:
-            # do not reveal whether the account exists
-            raise NotFoundError("No account found for this email", code="no_account")
+            # do not reveal whether the account exists — behave as if sent.
+            return None
         token = secrets.token_urlsafe(32)
         hashed = hashlib.sha256(token.encode()).hexdigest()
         expires_at = datetime.now(timezone.utc) + timedelta(hours=24)

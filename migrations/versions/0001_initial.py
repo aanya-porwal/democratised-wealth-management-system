@@ -31,7 +31,10 @@ def upgrade() -> None:
     """Create the initial schema."""
     # gen_random_uuid() ships in PostgreSQL 13+ core; pgcrypto is a
     # no-op on newer versions and required on older ones.
-    op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
+    # PostgreSQL-only: SQLite (used for local/migration smoke checks) has
+    # no CREATE EXTENSION and rejects the statement outright.
+    if op.get_bind().dialect.name == "postgresql":
+        op.execute("CREATE EXTENSION IF NOT EXISTS pgcrypto")
 
     # ── users ──────────────────────────────────────────────────────
     op.create_table(

@@ -88,20 +88,62 @@ async def async_client(app: FastAPI) -> AsyncGenerator[AsyncClient, None]:
 
 @pytest.fixture
 def default_user(db_session: Session) -> User:
-    """Create a plain user for general tests."""
-    import hashlib, secrets
+    """Create a user with the profiles the engine needs for general tests."""
+    from app.auth.password import hash_password
+    from app.models.behavioral_profile import BehavioralProfile
+    from app.models.financial_profile import FinancialProfile
+    from app.models.user_profile import UserProfile
 
     user = User(
         id=uuid.uuid4(),
         email="test@example.com",
         phone="+919999999999",
-        password_hash=hashlib.sha256("password123".encode()).hexdigest(),
+        password_hash=hash_password("password123"),
         full_name="Test User",
         role=Role.USER,
         is_active=True,
         is_email_verified=False,
     )
     db_session.add(user)
+    db_session.flush()
+
+    db_session.add(
+        UserProfile(
+            user_id=user.id,
+            name="Test User",
+            age=30,
+            date_of_birth=date(1994, 5, 15),
+            dependents=1,
+            life_stage="wealth_building",
+            city="Mumbai",
+            occupation="Engineer",
+        )
+    )
+    db_session.add(
+        FinancialProfile(
+            user_id=user.id,
+            monthly_income=100000.0,
+            employment_type="salaried_private",
+            income_stability=0.8,
+            monthly_fixed_expenses=30000.0,
+            monthly_variable_expenses=20000.0,
+            emergency_fund_months=6.0,
+            existing_investments=500000.0,
+            tax_bracket_percent=20.0,
+            has_term_life_insurance=True,
+            has_health_insurance=True,
+        )
+    )
+    db_session.add(
+        BehavioralProfile(
+            user_id=user.id,
+            risk_tolerance="moderate",
+            drawdown_reaction_score=3,
+            has_invested_before=True,
+            financial_literacy_score=3,
+            loss_aversion_score=3,
+        )
+    )
     db_session.flush()
     return user
 
@@ -130,8 +172,8 @@ def auth_headers(default_user: User) -> dict[str, str]:
     """Generate JWT headers for the default user."""
     from app.auth.jwt import create_token_pair
 
-    tokens = create_token_pair(str(default_user.id), default_user.role.value)
-    return {"Authorization": f"Bearer {tokens.access_token}"}
+    tokens = create_token_pair(subject=str(default_user.id), role=default_user.role.value)
+    return {"Authorization": f"Bearer {tokens['access_token']}"}
 
 
 @pytest.fixture
@@ -139,5 +181,5 @@ def admin_auth_headers(admin_user: User) -> dict[str, str]:
     """Generate JWT headers for the admin user."""
     from app.auth.jwt import create_token_pair
 
-    tokens = create_token_pair(str(admin_user.id), admin_user.role.value)
-    return {"Authorization": f"Bearer {tokens.access_token}"}
+    tokens = create_token_pair(subject=str(admin_user.id), role=admin_user.role.value)
+    return {"Authorization": f"Bearer {tokens['access_token']}"}
